@@ -24,11 +24,12 @@ public class GraphicUtils {
     comp.setLocation(stred);
   }
 
-  public static String validate(JTextComponent component, String regex, String defaultValue) {
+  public static boolean validate(JTextComponent component, String regex, String defaultValue) {
     if (!component.getText().matches(regex)) {
       component.setText(defaultValue);
+      return false;
     }
-    return component.getText();
+    return true;
   }
 
 }

@@ -2,10 +2,12 @@ package cz.macgregor.maidai.edit.grf.lstn.menu;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -13,6 +15,7 @@ import javax.swing.JTextField;
 
 import cz.macgregor.maidai.edit.core.EditorContext;
 import cz.macgregor.maidai.edit.grf.MapEditor;
+import cz.macgregor.maidai.edit.grf.lstn.ValidatingIistener;
 import cz.macgregor.maidai.util.GraphicUtils;
 import lombok.RequiredArgsConstructor;
 
@@ -25,65 +28,72 @@ public class NewMapListener implements ActionListener {
   private int outX = 0;
   private int outY = 0;
 
-  private JDialog dialog;
+  private int fldOutX = 80;
+  private int fldOutY = 60;
 
   @Override
   public void actionPerformed(ActionEvent e) {
-    this.dialog = new NewMapDialog();
+    showDialog();
   }
 
-  private class NewMapDialog extends JDialog {
+  private void showDialog() {
+    JDialog dialog = new JDialog(frame, true);
+    dialog.setTitle("Nová mapa");
 
-    private NewMapDialog() {
-      super(frame, true);
-      this.setTitle("Nová mapa");
+    JPanel sizeParams = new JPanel(new GridLayout(2, 2));
+    JTextField sizeX = sizeField("Šířka", outX, sizeParams);
+    JTextField sizeY = sizeField("Výška", outY, sizeParams);
 
-      JPanel params = new JPanel(new GridLayout(2, 2));
+    JPanel fldSizeParams = new JPanel(new GridLayout(2, 2));
+    JTextField fldSizeX = sizeField("Šířka pole", fldOutX, fldSizeParams);
+    JTextField fidSizeY = sizeField("Výška pole", fldOutY, fldSizeParams);
 
-      JTextField sizeXLabel = new JTextField("Výška");
-      sizeXLabel.setEditable(false);
-      JTextField sizeX = new JTextField(Integer.toString(outX));
+    JButton okButton = new JButton("OK");
+    okButton.addActionListener(e -> {
+      outX = Integer.parseInt(sizeX.getText());
+      outY = Integer.parseInt(sizeY.getText());
+      fldOutX = Integer.parseInt(fldSizeX.getText());
+      fldOutY = Integer.parseInt(fidSizeY.getText());
+      if (outX == 0 || outY == 0) {
+        return;
+      }
 
-      JTextField sizeYLabel = new JTextField("Šířka");
-      sizeYLabel.setEditable(false);
-      JTextField sizeY = new JTextField(Integer.toString(outY));
+      editor.setCtx(new EditorContext(new Point(outX, outY), new Point(fldOutX, fldOutY)));
+      dialog.dispose();
+      frame.repaint();
+    });
 
-      params.add(sizeXLabel);
-      params.add(sizeX);
-      params.add(sizeYLabel);
-      params.add(sizeY);
+    JButton stornoButton = new JButton("storno");
+    stornoButton.addActionListener(e -> dialog.dispose());
 
-      JDialog theDialog = this;
+    JPanel centerpanel = new JPanel();
+    centerpanel.add(sizeParams);
+    centerpanel.add(fldSizeParams);
+    dialog.add(centerpanel);
 
-      JButton okButton = new JButton("OK");
-      okButton.addActionListener(e -> {
-        outX = Integer.parseInt(GraphicUtils.validate(sizeX, "[0-9]{1,9}", "0"));
-        outY = Integer.parseInt(GraphicUtils.validate(sizeY, "[0-9]{1,9}", "0"));
-        if (outX == 0 || outY == 0) {
-          return;
-        }
+    JPanel buttonsPanel = new JPanel();
+    buttonsPanel.add(okButton);
+    buttonsPanel.add(stornoButton);
+    dialog.add(buttonsPanel, BorderLayout.SOUTH);
 
-        editor.setCtx(new EditorContext(outX, outY));
-        theDialog.dispose();
-      });
+    dialog.pack();
+    dialog.setResizable(false);
 
-      JButton stornoButton = new JButton("storno");
-      stornoButton.addActionListener(e -> theDialog.dispose());
+    GraphicUtils.moveToCenter(dialog);
+    dialog.setVisible(true);
+  }
 
-      this.add(params);
+  private JTextField sizeField(String tag, int defaultVal, JComponent parent) {
+    JTextField labelField = new JTextField(tag);
+    labelField.setEditable(false);
 
-      JPanel buttonsPanel = new JPanel();
-      buttonsPanel.add(okButton);
-      buttonsPanel.add(stornoButton);
-      this.add(buttonsPanel, BorderLayout.SOUTH);
+    JTextField sizeField = new JTextField(Integer.toString(defaultVal));
+    sizeField.addKeyListener(new ValidatingIistener(sizeField, ValidatingIistener.POSITIVE_INTEGER));
 
-      this.pack();
-      this.setResizable(false);
+    parent.add(labelField);
+    parent.add(sizeField);
 
-      GraphicUtils.moveToCenter(this);
-      this.setVisible(true);
-    }
-
+    return sizeField;
   }
 
 }
